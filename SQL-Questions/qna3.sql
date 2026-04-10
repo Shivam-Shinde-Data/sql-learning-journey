@@ -1,4 +1,4 @@
-SQL - CASE WHEN / HAVING: 
+--April 09 - SQL - CASE WHEN / HAVING: 
 
 WITH customers AS (
     SELECT 101 AS customer_id, 'Alice' AS customer_name, 'India' AS country UNION ALL
@@ -45,16 +45,16 @@ FROM orders;
 --LOW → < 800
 
 SELECT
-c.customer_id,
-c.customer_name,
-SUM(o.order_amount) AS total_spend,
-CASE
-WHEN SUM(o.order_amount) > 1500 THEN 'HIGH'
-WHEN SUM(o.order_amount) BETWEEN 800 AND 1500 THEN 'MEDIUM'
-ELSE 'LOW'
-END AS category
+    c.customer_id,
+    c.customer_name,
+    COALESCE(SUM(o.order_amount), 0) AS total_spend,
+    CASE
+        WHEN COALESCE(SUM(o.order_amount), 0) > 1500 THEN 'HIGH'
+        WHEN COALESCE(SUM(o.order_amount), 0) BETWEEN 800 AND 1500 THEN 'MEDIUM'
+        ELSE 'LOW'
+    END AS category
 FROM customers c
-JOIN orders o ON c.customer_id = o.customer_id
+LEFT JOIN orders o ON c.customer_id = o.customer_id
 GROUP BY c.customer_id, c.customer_name;
 
 --🟡 Q3: Delivered vs Cancelled Revenue
@@ -71,8 +71,8 @@ FROM orders;
 --Inactive → no orders
 
 SELECT
-SUM(CASE WHEN o.customer_id IS NOT NULL THEN 1 ELSE 0 END) AS active_customers,
-SUM(CASE WHEN o.customer_id IS NULL THEN 1 ELSE 0 END) AS inactive_customers
+    COUNT(DISTINCT CASE WHEN o.customer_id IS NOT NULL THEN c.customer_id END) AS active_customers,
+    COUNT(DISTINCT CASE WHEN o.customer_id IS NULL THEN c.customer_id END) AS inactive_customers
 FROM customers c
 LEFT JOIN orders o ON c.customer_id = o.customer_id;
 
@@ -95,9 +95,9 @@ SUM(CASE WHEN order_status = 'CANCELLED' THEN 1 ELSE 0 END);
 --👉 % of delivered orders = delivered_orders / total_orders
 
 SELECT
-customer_id,
-COUNT() AS total_orders,
-SUM(CASE WHEN order_status = 'DELIVERED' THEN 1 ELSE 0 END) * 100.0 / COUNT() AS delivered_percentage
+    customer_id,
+    COUNT(*) AS total_orders,
+    SUM(CASE WHEN order_status = 'DELIVERED' THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS delivered_percentage
 FROM orders
 GROUP BY customer_id;
 
